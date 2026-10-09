@@ -12,11 +12,17 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.miguelaetxio.mibt.update.UpdateCheckResult
+import com.miguelaetxio.mibt.update.UpdateChecker
 
 class MainActivity : Activity() {
 
     private lateinit var status: TextView
     private lateinit var logView: TextView
+    private lateinit var updateStatus: TextView
+    private lateinit var installButton: Button
+    private lateinit var updateChecker: UpdateChecker
+    private var pendingApkUri: android.net.Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +44,11 @@ class MainActivity : Activity() {
             setOnClickListener { action() }
         }
 
+        updateChecker = UpdateChecker(this)
+        updateStatus = TextView(this).apply { textSize = 14f }
+        installButton = button("Instalar actualización") { onInstallClicked() }
+        installButton.visibility = android.view.View.GONE
+
         root.addView(status)
         root.addView(button("Permisos y arrancar") { startMonitor() })
         root.addView(button("Parar") {
@@ -50,6 +61,9 @@ class MainActivity : Activity() {
             LogStore.clear(this)
             showLog()
         })
+        root.addView(button("Buscar actualizaciones") { onCheckUpdateClicked() })
+        root.addView(updateStatus)
+        root.addView(installButton)
         root.addView(logView)
 
         setContentView(ScrollView(this).apply { addView(root) })
@@ -58,6 +72,47 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         showLog()
+        // Back from system settings after granting "install unknown apps":
+        // retry the install directly.
+        // ---
+        // Al volver de Ajustes tras conceder "instalar apps desconocidas":
+        // reintenta la instalación directamente.
+        if (pendingApkUri != null && updateChecker.ensureInstallPermissionOrRedirect()) {
+            onInstallClicked()
+        }
+    }
+
+    private fun onCheckUpdateClicked() {
+        installButton.visibility = android.view.View.GONE
+        updateStatus.text = "Comprobando actualizaciones..."
+        updateChecker.checkForUpdate(BuildConfig.VERSION_CODE) { result ->
+            when (result) {
+                is UpdateCheckResult.UpToDate -> updateStatus.text = "Ya tienes la última versión"
+                is UpdateCheckResult.Error -> updateStatus.text = "Error: ${result.message}"
+                is UpdateCheckResult.UpdateAvailable -> {
+                    updateStatus.text = "Descargando versión ${result.manifest.versionName}..."
+                    updateChecker.downloadApk(
+                        result.manifest,
+                        onProgress = { _, _ -> },
+                        onSuccess = { uri ->
+                            pendingApkUri = uri
+                            updateStatus.text = "Descarga completa"
+                            installButton.visibility = android.view.View.VISIBLE
+                        },
+                        onError = { message -> updateStatus.text = "Error: $message" }
+                    )
+                }
+            }
+        }
+    }
+
+    private fun onInstallClicked() {
+        val uri = pendingApkUri ?: return
+        if (!updateChecker.ensureInstallPermissionOrRedirect()) {
+            updateStatus.text = "Concede el permiso de instalar apps desconocidas y vuelve"
+            return
+        }
+        updateChecker.launchInstall(uri)
     }
 
     private fun missingPermissions(): List<String> {

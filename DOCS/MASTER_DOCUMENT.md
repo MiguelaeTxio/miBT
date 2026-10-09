@@ -42,8 +42,11 @@ varios dispositivos de AliExpress. Móviles: Redmi Note 10 y Redmi Note
   izquierda/derecha/estuche/carga.
 - Log en `files/mibt-log.txt`, con botón de compartir en la app.
 - Compilación solo en GitHub Actions (`.github/workflows/
-  build-and-deploy.yml`): compila, sube el APK a PythonAnywhere y lo
-  deja también como artefacto de la ejecución.
+  build-and-deploy.yml`), mismo flujo que AperturasAjedrez: compila,
+  sube el APK a PythonAnywhere, genera `manifest.json` y publica
+  una Release en el repositorio propio `miBTReleases`. La app trae un
+  actualizador in-app (`update/UpdateChecker.kt`, botón *Buscar
+  actualizaciones*) con el mismo patrón que AperturasAjedrez.
 
 ## 3. Hoja de Ruta Estratégica (hitos)
 

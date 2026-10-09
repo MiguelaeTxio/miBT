@@ -31,15 +31,6 @@ jobs:
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace -PversionCode=${{ github.run_number }}
 
-      - name: Preparar APK con nombre fijo
-        run: cp app/build/outputs/apk/debug/app-debug.apk miBT.apk
-
-      - name: Guardar APK como artefacto de la ejecucion
-        uses: actions/upload-artifact@v4
-        with:
-          name: miBT-apk
-          path: miBT.apk
-
       - name: Upload APK to PythonAnywhere
         env:
           PA_API_TOKEN: ${{ secrets.PA_API_TOKEN }}
@@ -47,5 +38,34 @@ jobs:
         run: |
           curl -sS --fail-with-body -X POST \
             -H "Authorization: Token ${PA_API_TOKEN}" \
-            -F "content=@miBT.apk" \
+            -F "content=@app/build/outputs/apk/debug/app-debug.apk" \
             "https://www.pythonanywhere.com/api/v0/user/${PA_USERNAME}/files/path/home/${PA_USERNAME}/ANDROID/miBT/apk/miBT.apk"
+
+      - name: Generar manifest.json de version
+        run: |
+          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
+          cat > manifest.json <<EOF
+          {
+            "versionCode": ${{ github.run_number }},
+            "versionName": "$VERSION_NAME",
+            "apkUrl": "https://github.com/MiguelaeTxio/miBTReleases/releases/download/v${{ github.run_number }}/miBT.apk"
+          }
+          EOF
+          echo "Manifiesto generado:"
+          cat manifest.json
+          python3 -m json.tool manifest.json > /dev/null && echo "[JSON OK]"
+
+      - name: Preparar APK con nombre fijo para el asset de la Release
+        run: cp app/build/outputs/apk/debug/app-debug.apk miBT.apk
+
+      # Own Releases repository for this project, never another app's.
+      - name: Publicar Release en miBTReleases
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: MiguelaeTxio/miBTReleases
+          token: ${{ secrets.RELEASES_REPO_TOKEN }}
+          tag_name: v${{ github.run_number }}
+          name: miBT v${{ github.run_number }}
+          files: |
+            miBT.apk
+            manifest.json
