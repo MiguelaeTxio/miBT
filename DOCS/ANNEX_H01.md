@@ -74,6 +74,26 @@ Buds 6 Lite.
   final = bits de posición: bit 0 derecho en estuche, bit 1 izquierdo
   en estuche, bit 2 derecho fuera, bit 3 izquierdo fuera.
 
+**Reconexión con izquierdo puesto y derecho en estuche cerrado
+(S2, 21:29):**
+
+- `+XIAOMI [1,1,174,93,255,255,1]`. No llegó ninguna trama `0A{XX}`;
+  la trama larga cambió un byte: `…7BFF25…` (ambos en estuche) →
+  `…7BFF05…`.
+- **Lectura S2 de la forma `[1,1,X,A,B,C,D]`:** `X` no es batería
+  (78 = 0x4E, 174 = 0xAE: estado/flags desconocidos); `A`, `B`, `C` =
+  bit 7 cargando + nivel en los 7 bits bajos, 255 = sin dato; `D`
+  desconocido (2, 1, 1).
+  - Ambos en estuche: A=100 % cargando, B=99 % cargando, C=94→100 %
+    cargando.
+  - Izquierdo fuera, derecho en estuche cerrado: A=93 % sin cargar,
+    B=sin dato, C=sin dato.
+- Conclusión provisional: `A` = auricular izquierdo (o "el que está
+  fuera"), `B` = derecho, `C` = estuche. Con el estuche cerrado el
+  derecho y el estuche no informan. Falta la prueba simétrica
+  (derecho fuera, izquierdo en estuche) para descartar que `A` sea
+  "el auricular activo" en vez de "el izquierdo".
+
 **Otros dispositivos AliExpress:** "TWS" 41:42:AD:C8:FB:B3,
 "TWS" 41:42:94:E4:E6:31, "Bluetooth music" 41:42:A0:A1:FF:7B y
 "Bluetooth music" 11:21:AA:03:30:E9: solo eventos de conexión; ningún
