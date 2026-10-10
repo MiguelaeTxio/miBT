@@ -61,6 +61,19 @@ Buds 6 Lite.
   ACL conectado/desconectado en segundos (emparejamiento rápido de
   Google fallido, "No se ha podido conectar"): ajeno a miBT.
 
+**Prueba de auriculares fuera/dentro del estuche (S2, 21:08–21:11):**
+
+- Durante el uso **no** vuelve a llegar la forma `[1,1,78,…]`: solo
+  aparece al conectar. El porcentaje Apple bajó a 90 % con un auricular
+  fuera y volvió a 100 %.
+- Las tramas `FF010201010400020A{XX}FF` cambian con cada movimiento:
+  `03` ambos en el estuche (conexión), `06` derecho fuera/izquierdo
+  dentro, `0C` momento con ambos fuera, `09` izquierdo fuera/derecho
+  dentro.
+- **Hipótesis S2 (coherente con los 4 estados, sin verificar):** byte
+  final = bits de posición: bit 0 derecho en estuche, bit 1 izquierdo
+  en estuche, bit 2 derecho fuera, bit 3 izquierdo fuera.
+
 **Otros dispositivos AliExpress:** "TWS" 41:42:AD:C8:FB:B3,
 "TWS" 41:42:94:E4:E6:31, "Bluetooth music" 41:42:A0:A1:FF:7B y
 "Bluetooth music" 11:21:AA:03:30:E9: solo eventos de conexión; ningún
