@@ -33,6 +33,45 @@ Redmi Note 10 (M2101K6G), Android 13:
   errores): pendiente de revisar.
 - Pendiente de registrar: Xiaomi Buds 6 y el resto de dispositivos.
 
+## DATOS REALES RECOGIDOS (S2)
+
+Log del 2026-10-10, Redmi Note 9 Pro, Android 12 (API 31).
+
+**Redmi Buds 6 Lite** (78:99:87:B7:13:57; dirección LE aparte
+F8:99:87:B7:13:57). Son los "Xiaomi Buds 6": el modelo real es Redmi
+Buds 6 Lite.
+
+- Igual que el TWS: `+XAPL` (`0000-0000-0100`, características `11`),
+  `+IPHONEACCEV [1,1,9]`, broadcast oculto y `getBatteryLevel()`
+  oculto: un único 100 %.
+- **Además** envía comandos propietarios `+XIAOMI` por HFP con
+  `companyid.911` (0x038F, Xiaomi), que la v1 ya captura:
+  - `+XIAOMI [1,1,78,228,227,222,2]` (20:37:58) y
+    `[1,1,78,228,227,228,1]` (20:38:57).
+  - Tramas hex `FF…FF`: `FF01020101150004017BFF250B200501011C000001000205020C00FF`
+    (repetida igual en ambas conexiones) y `FF010201010400020A03FF` /
+    `FF010201010400020A06FF`.
+- **Hipótesis S2 (sin verificar, no se usa en la notificación):** en
+  la primera forma, los valores 228/227/222 = 0xE4/0xE3/0xDE serían
+  bit 7 = cargando y 7 bits bajos = nivel → 100/99/94 % y luego
+  100/99/100 %, cargando, coherente con auriculares dentro del
+  estuche. Orden izquierdo/derecho/estuche, el 78 y el último campo:
+  desconocidos.
+- Antes de conectar bien hubo tres intentos 20:29–20:33 con
+  ACL conectado/desconectado en segundos (emparejamiento rápido de
+  Google fallido, "No se ha podido conectar"): ajeno a miBT.
+
+**Otros dispositivos AliExpress:** "TWS" 41:42:AD:C8:FB:B3,
+"TWS" 41:42:94:E4:E6:31, "Bluetooth music" 41:42:A0:A1:FF:7B y
+"Bluetooth music" 11:21:AA:03:30:E9: solo eventos de conexión; ningún
+evento de fabricante ni nivel de batería. Para ellos "sin datos" es
+lo correcto.
+
+**Sonda GATT:** tampoco dejó ninguna línea. Causa leída en el código:
+`connectGatt(..., TRANSPORT_LE)` se lanza contra la dirección clásica
+(`tipo=1`, BR/EDR), que no tiene LE; nunca llega `onConnectionStateChange`
+y el temporizador hace `close()` sin registrar nada.
+
 ## HOJA DE RUTA PARA LA SIGUIENTE SESIÓN
 
 1. Confirmar que el workflow de la última ejecución terminó en verde
