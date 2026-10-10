@@ -94,6 +94,23 @@ Buds 6 Lite.
   (derecho fuera, izquierdo en estuche) para descartar que `A` sea
   "el auricular activo" en vez de "el izquierdo".
 
+**Prueba simétrica (S2, 21:34): derecho puesto, izquierdo en estuche
+cerrado, reconexión.**
+
+- `+XIAOMI [1,1,174,255,100,255,1]`: el auricular de fuera aparece
+  ahora en `B`. **Confirmado:** `A` = izquierdo, `B` = derecho,
+  `C` = estuche; bit 7 = cargando; 255 = sin dato.
+- Las tramas `0A{XX}` del cambio: `09` → `0C` → `06`, coherentes con
+  la hipótesis de bits de posición (sacar el derecho, meter el
+  izquierdo).
+
+**Conclusión H01 (S2):** objetivo cumplido para los Redmi Buds 6 Lite:
+la batería de izquierdo/derecho/estuche y la carga llegan por
+`+XIAOMI` al conectar, y la posición de cada auricular en tiempo real
+por `0A{XX}`. Límites vistos: la batería por elemento solo llega al
+conectar (durante el uso solo el porcentaje único Apple), y con el
+estuche cerrado el auricular de dentro y el estuche no informan.
+
 **Otros dispositivos AliExpress:** "TWS" 41:42:AD:C8:FB:B3,
 "TWS" 41:42:94:E4:E6:31, "Bluetooth music" 41:42:A0:A1:FF:7B y
 "Bluetooth music" 11:21:AA:03:30:E9: solo eventos de conexión; ningún
