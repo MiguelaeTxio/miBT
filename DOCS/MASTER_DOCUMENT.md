@@ -55,7 +55,7 @@ Estado de los hitos: ver `DOCS/ANNEX_ROUTER.md` (única fuente).
 | Hito | Nombre | Anexo |
 |---|---|---|
 | 1 | Visor de diagnóstico y primeras notificaciones | `DOCS/ANNEX_H01.md` |
-| 2 | Módulo por fabricante: izquierda/derecha/estuche/carga | (por crear, depende de los datos del H01) |
+| 2 | Módulo Xiaomi: izquierdo/derecho/estuche/carga y posición de cada auricular (Redmi Buds 6 Lite, protocolo `+XIAOMI` por HFP descifrado en el H01) | `DOCS/ANNEX_H02.md` |
 
 ## 4. Directrices Técnicas Vinculantes
 

@@ -1,7 +1,5 @@
 # ANEXO H01 — Visor de diagnóstico y primeras notificaciones
 
-**Estado:** EN PROGRESO
-
 ## Objetivo
 
 Tener en el móvil una app que (a) lista los dispositivos Bluetooth
@@ -15,6 +13,17 @@ fabricante (H02).
 - Esqueleto del proyecto, `DOCS/` y workflow de compilación.
 - Servicio en primer plano con una notificación por dispositivo.
 - Log de diagnóstico con botón de compartir.
+
+## COMPLETADAS EN S2
+
+- Punto 1 de la hoja de ruta: último workflow en verde, APK subida y
+  Release publicada en `miBTReleases`.
+- Puntos 2 y 3: cuatro logs reales de los Redmi Buds 6 Lite (ambos en
+  estuche, cambios de posición, reconexión con cada auricular fuera)
+  y de los dispositivos AliExpress, analizados abajo en "DATOS REALES
+  RECOGIDOS (S2)".
+- Punto 4: decidido con Miguel Ángel cerrar el H01 y abrir el H02
+  (módulo Xiaomi) con el alcance de `DOCS/ANNEX_H02.md`.
 
 ## DATOS REALES RECOGIDOS (S1)
 
