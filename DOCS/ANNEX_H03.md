@@ -87,3 +87,12 @@ de ruta solo cuando se concierta con Miguel Ángel.
 - En esta prueba las tramas HFP de posición sí llegaron en cada cambio
   (10:35:10–10:35:21: `09`, `0C`, `06`, `03`), a diferencia de la de
   las 09:5x.
+
+## RESULTADO DEL CANAL DE CONTROL (S3)
+
+- Implementado en `xiaomi/XiaomiControlChannel.kt` + `xiaomi/XiaomiAuth.java`
+  (commits `9a48255`, licencia/atribución `770382c`, enlace al código
+  fuente en cada Release `7afe376`). La autenticación se verificó
+  offline contra la respuesta real de los Buds 6 Lite antes de publicar.
+- Prueba de Miguel Ángel (10:51): "funciona perfectamente en principio"
+  — la notificación refleja batería y posición en tiempo real.
