@@ -66,3 +66,24 @@ de ruta solo cuando se concierta con Miguel Ángel.
    (b) si no basta, capturar el tráfico app Xiaomi ↔ auriculares con el
    registro HCI de Bluetooth del modo desarrollador y descifrarlo con
    datos reales; (c) implementar la consulta/suscripción en miBT.
+
+## DATOS REALES DE LA SONDA RFCOMM (S3, log de las 10:30–10:35)
+
+- `0xFD2D` (canal de control de Gadgetbridge para Redmi Buds 5 Pro)
+  **existe en los Buds 6 Lite** aunque no aparece en su lista de UUID.
+  Con los auriculares ya conectados (10:30) rechazó la conexión; tras
+  una reconexión (10:31:18) aceptó, y al reto de autenticación
+  `FEDCBA C4 50 0012 00 01{16 bytes} EF` respondió con
+  `FEDCBA 04 50 0013 00 00 01 266B677430D1ABFC6DBB153B52054115 EF`:
+  exactamente la respuesta `AUTH_CHALLENGE` de Gadgetbridge (tipo 0x04
+  RESPONSE, opcode 0x50, estado 0x00, seq 0x00). Protocolo confirmado.
+  Menos de 1 s después los auriculares cerraron el socket: la sonda no
+  continuó el apretón de manos (Gadgetbridge envía `AUTH_CONFIRM` 0x51
+  y responde al reto de los auriculares con SAFER+).
+- `df21fe2c-…` rechazó la conexión las dos veces.
+- `8a482a08-…` aceptó (10:30:03) y emitió cada ~2 s una trama de 8 bytes
+  `BE 50 {nn} 03 00 00 01 {cs}` con `nn` incremental y `cs` decreciente,
+  sin enmarcado `FEDCBA`. No descifrada; no se usa.
+- En esta prueba las tramas HFP de posición sí llegaron en cada cambio
+  (10:35:10–10:35:21: `09`, `0C`, `06`, `03`), a diferencia de la de
+  las 09:5x.
