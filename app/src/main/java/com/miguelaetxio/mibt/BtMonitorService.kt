@@ -93,6 +93,7 @@ class BtMonitorService : Service() {
     private val xiaomiPosition = HashMap<String, XiaomiPosition>()
     private val lastSnapshot = HashMap<String, String>()
     private val gattProbed = HashSet<String>()
+    private val rfcommProbed = HashSet<String>()
     private val notifiedIds = HashSet<Int>()
 
     private val profileListener = object : BluetoothProfile.ServiceListener {
@@ -323,6 +324,12 @@ class BtMonitorService : Service() {
                 )
             }
             if (gattProbed.add(addr)) probeGatt(d)
+            // One RFCOMM probe of Xiaomi's own channel per connection (H03 step 8).
+            // ---
+            // Una sonda RFCOMM del canal propio de Xiaomi por conexión (H03 paso 8).
+            if (name.startsWith("Redmi Buds") && rfcommProbed.add(addr)) {
+                XiaomiRfcommProbe(this, d).start()
+            }
 
             val id = addr.hashCode()
             current.add(id)
@@ -353,6 +360,7 @@ class BtMonitorService : Service() {
         notifiedIds.addAll(current)
         val connected = devices.map { it.address }.toSet()
         gattProbed.retainAll(connected)
+        rfcommProbed.retainAll(connected)
         xiaomiPosition.keys.retainAll(connected)
         nm.notify(SUMMARY_ID, buildSummary(devices.size))
     }
