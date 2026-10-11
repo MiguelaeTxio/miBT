@@ -115,9 +115,18 @@ class BtMonitorService : Service() {
             if (action == ACTION_BATTERY_LEVEL_CHANGED) {
                 val level = intent.getIntExtra(EXTRA_BATTERY_LEVEL, -1)
                 LogStore.log(context, "BATT-BROADCAST", "${describe(device)} nivel=$level")
-                if (device != null && level in 0..100) {
-                    vendorBattery[device.address] = level
-                    batterySource[device.address] = SRC_SYSTEM
+                // The system rebroadcasts the +IPHONEACCEV figure right after it
+                // arrives (seen in S3 logs); same value keeps the HFP source.
+                // ---
+                // El sistema reemite la cifra de +IPHONEACCEV justo después de
+                // llegar (visto en los logs de S3); con el mismo valor se
+                // conserva el origen HFP.
+                val addr = device?.address
+                if (addr != null && level in 0..100 &&
+                    !(batterySource[addr] == SRC_HFP && vendorBattery[addr] == level)
+                ) {
+                    vendorBattery[addr] = level
+                    batterySource[addr] = SRC_SYSTEM
                 }
             } else {
                 LogStore.log(context, "EVENT", "$action ${describe(device)}")
