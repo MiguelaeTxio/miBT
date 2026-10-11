@@ -25,6 +25,9 @@ import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 @SuppressLint("MissingPermission")
@@ -60,6 +63,15 @@ class BtMonitorService : Service() {
     private val proxies = HashMap<Int, BluetoothProfile>()
 
     private val vendorBattery = HashMap<String, Int>()
+
+    // Last +XIAOMI battery list per device with its reception time (kept after
+    // disconnecting) and last bud position (cleared when the device disconnects).
+    // ---
+    // Última lista de batería +XIAOMI por dispositivo con su hora de recepción (se
+    // conserva al desconectar) y última posición de los auriculares (se borra al
+    // desconectarse el dispositivo).
+    private val xiaomiBattery = HashMap<String, Pair<XiaomiBattery, Long>>()
+    private val xiaomiPosition = HashMap<String, XiaomiPosition>()
     private val lastSnapshot = HashMap<String, String>()
     private val gattProbed = HashSet<String>()
     private val notifiedIds = HashSet<Int>()
@@ -128,6 +140,14 @@ class BtMonitorService : Service() {
                         }
                     }
                     i += 2
+                }
+            }
+            if (device != null && cmd == "+XIAOMI" && args is Array<*>) {
+                XiaomiProtocol.parseBattery(args)?.let {
+                    xiaomiBattery[device.address] = it to System.currentTimeMillis()
+                }
+                XiaomiProtocol.parsePosition(args)?.let {
+                    xiaomiPosition[device.address] = it
                 }
             }
             refresh()
@@ -275,8 +295,7 @@ class BtMonitorService : Service() {
             current.add(id)
             val title = name
             val line = if (pct != null) "Batería: $pct%" else "Batería: sin datos"
-            val detail = line + "\nIzquierdo / derecho / estuche / carga: sin datos " +
-                "(pendiente del protocolo del fabricante)"
+            val detail = line + "\n" + xiaomiDetail(addr)
             val n = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
                 .setContentTitle(title)
@@ -292,8 +311,53 @@ class BtMonitorService : Service() {
         for (id in notifiedIds - current) nm.cancel(id)
         notifiedIds.clear()
         notifiedIds.addAll(current)
-        gattProbed.retainAll(devices.map { it.address }.toSet())
+        val connected = devices.map { it.address }.toSet()
+        gattProbed.retainAll(connected)
+        xiaomiPosition.keys.retainAll(connected)
         nm.notify(SUMMARY_ID, buildSummary(devices.size))
+    }
+
+    // Per-element battery, reading time and bud position when +XIAOMI data exist;
+    // otherwise the generic "no data" line. Nothing is invented (§4.6).
+    // ---
+    // Batería por elemento, hora de lectura y posición de los auriculares si hay
+    // datos +XIAOMI; si no, la línea genérica "sin datos". Nada se inventa (§4.6).
+    private fun xiaomiDetail(addr: String): String {
+        val battery = xiaomiBattery[addr]
+        val position = xiaomiPosition[addr]
+        if (battery == null && position == null) {
+            return "Izquierdo / derecho / estuche / carga: sin datos " +
+                "(pendiente del protocolo del fabricante)"
+        }
+        val lines = ArrayList<String>()
+        if (battery != null) {
+            val (b, time) = battery
+            lines.add("Izquierdo: ${cellText(b.left)}")
+            lines.add("Derecho: ${cellText(b.right)}")
+            lines.add("Estuche: ${cellText(b.case)}")
+            val hour = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
+            lines.add("Lectura de las $hour (al conectar)")
+        } else {
+            lines.add("Izquierdo / derecho / estuche: sin datos")
+        }
+        if (position != null) {
+            lines.add(
+                "Posición: izquierdo ${placeText(position.left)}, " +
+                    "derecho ${placeText(position.right)}"
+            )
+        }
+        return lines.joinToString("\n")
+    }
+
+    private fun cellText(cell: XiaomiCell?): String {
+        if (cell == null) return "sin dato"
+        return "${cell.percent}%" + if (cell.charging) " ⚡ cargando" else ""
+    }
+
+    private fun placeText(place: BudPlace): String = when (place) {
+        BudPlace.IN_CASE -> "en el estuche"
+        BudPlace.OUT -> "puesto"
+        BudPlace.UNKNOWN -> "en posición desconocida"
     }
 
     private fun buildSummary(count: Int): Notification {
