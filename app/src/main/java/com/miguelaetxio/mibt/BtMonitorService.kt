@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import com.miguelaetxio.mibt.xiaomi.XiaomiControlChannel
 
 @SuppressLint("MissingPermission")
 class BtMonitorService : Service() {
@@ -93,7 +94,29 @@ class BtMonitorService : Service() {
     private val xiaomiPosition = HashMap<String, XiaomiPosition>()
     private val lastSnapshot = HashMap<String, String>()
     private val gattProbed = HashSet<String>()
-    private val rfcommProbed = HashSet<String>()
+
+    // Open Xiaomi control channels per device address (H03 step 8).
+    // ---
+    // Canales de control Xiaomi abiertos por dirección (H03 paso 8).
+    private val controlChannels = HashMap<String, XiaomiControlChannel>()
+
+    private val channelListener = object : XiaomiControlChannel.Listener {
+        override fun onBattery(address: String, battery: XiaomiBattery) {
+            handler.post {
+                val now = System.currentTimeMillis()
+                xiaomiBattery[address] = battery to now
+                saveXiaomiBattery(address, battery, now)
+                refresh()
+            }
+        }
+
+        override fun onPosition(address: String, position: XiaomiPosition) {
+            handler.post {
+                xiaomiPosition[address] = position
+                refresh()
+            }
+        }
+    }
     private val notifiedIds = HashSet<Int>()
 
     private val profileListener = object : BluetoothProfile.ServiceListener {
@@ -244,6 +267,8 @@ class BtMonitorService : Service() {
             adapter?.closeProfileProxy(profile, proxy)
         }
         proxies.clear()
+        for (channel in controlChannels.values) channel.stop()
+        controlChannels.clear()
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         for (id in notifiedIds) nm.cancel(id)
         notifiedIds.clear()
@@ -324,11 +349,8 @@ class BtMonitorService : Service() {
                 )
             }
             if (gattProbed.add(addr)) probeGatt(d)
-            // One RFCOMM probe of Xiaomi's own channel per connection (H03 step 8).
-            // ---
-            // Una sonda RFCOMM del canal propio de Xiaomi por conexión (H03 paso 8).
-            if (name.startsWith("Redmi Buds") && rfcommProbed.add(addr)) {
-                XiaomiRfcommProbe(this, d).start()
+            if (name.startsWith("Redmi Buds") && addr !in controlChannels) {
+                controlChannels[addr] = XiaomiControlChannel(this, d, channelListener).also { it.start() }
             }
 
             val id = addr.hashCode()
@@ -360,7 +382,9 @@ class BtMonitorService : Service() {
         notifiedIds.addAll(current)
         val connected = devices.map { it.address }.toSet()
         gattProbed.retainAll(connected)
-        rfcommProbed.retainAll(connected)
+        for (addr in controlChannels.keys - connected) {
+            controlChannels.remove(addr)?.stop()
+        }
         xiaomiPosition.keys.retainAll(connected)
         nm.notify(SUMMARY_ID, buildSummary(devices.size))
     }
@@ -390,7 +414,7 @@ class BtMonitorService : Service() {
             val sameDay = day.format(Date(time)) == day.format(Date())
             val pattern = if (sameDay) "HH:mm" else "dd/MM HH:mm"
             val stamp = SimpleDateFormat(pattern, Locale.getDefault()).format(Date(time))
-            lines.add("Lectura de las $stamp (al conectar)")
+            lines.add("Lectura de las $stamp")
         } else {
             lines.add("Izquierdo / derecho / estuche: sin datos")
         }

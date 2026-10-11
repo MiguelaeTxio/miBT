@@ -55,11 +55,16 @@ object XiaomiProtocol {
         if (!frame.startsWith(POSITION_PREFIX) || !frame.endsWith(POSITION_SUFFIX)) return null
         val flags = frame.substring(POSITION_PREFIX.length, POSITION_PREFIX.length + 2)
             .toIntOrNull(16) ?: return null
-        return XiaomiPosition(
-            left = place(inCase = flags and 0x02 != 0, out = flags and 0x08 != 0),
-            right = place(inCase = flags and 0x01 != 0, out = flags and 0x04 != 0)
-        )
+        return positionFromFlags(flags)
     }
+
+    // Same four bits in the HFP frame and in the control channel (NOTIFY_CONFIG 0x0C).
+    // ---
+    // Los mismos cuatro bits en la trama HFP y en el canal de control (NOTIFY_CONFIG 0x0C).
+    fun positionFromFlags(flags: Int): XiaomiPosition = XiaomiPosition(
+        left = place(inCase = flags and 0x02 != 0, out = flags and 0x08 != 0),
+        right = place(inCase = flags and 0x01 != 0, out = flags and 0x04 != 0)
+    )
 
     // Raw byte of a cell in the protocol's own encoding (255 = no data); used to
     // persist the last reading and to rebuild it with cell().
