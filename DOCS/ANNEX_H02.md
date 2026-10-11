@@ -88,3 +88,28 @@ siguiente conexión.
    ponerse uno, ponerse el otro, guardar uno, y comprobar que la
    notificación refleja cada cambio de posición y los porcentajes de
    la conexión.
+
+## COMPLETADAS EN S3
+
+- `XiaomiProtocol.kt` (commit `1dc8920`): `parseBattery` para la forma
+  de 7 elementos y `parsePosition` para la trama `0A{XX}`; cualquier
+  forma no reconocida devuelve `null`.
+- `BtMonitorService.kt` (commit `f7e7bdc`): `vendorReceiver` guarda por
+  dirección la última batería `+XIAOMI` con su hora y la última
+  posición; la posición se borra al dejar de estar conectado el
+  dispositivo. La notificación muestra izquierdo, derecho y estuche
+  (porcentaje, ⚡ cargando, "sin dato" para 255), "Lectura de las
+  HH:mm (al conectar)" y la posición de cada auricular. Sin datos
+  Xiaomi queda como antes. Log de diagnóstico intacto.
+- Corrección tras la primera prueba (commit `eecce93`): la cifra de
+  `+IPHONEACCEV` va en tramos de 10 % (un 65 % real aparecía como
+  70 %); ahora se marca como aproximada: "≈70% (HFP, en tramos de
+  10 %)".
+- Workflows en verde y Releases publicadas en `miBTReleases`.
+- Prueba real de Miguel Ángel (Redmi Buds 6 Lite): tras reconectar,
+  la notificación mostró izquierdo 63 % cargando, derecho 100 %
+  cargando, estuche 100 %, lectura 08:33 y la posición correcta de
+  cada auricular. La primera prueba salió "sin datos" porque el
+  servicio se reinició con la actualización estando los auriculares
+  ya conectados (la lista solo llega al conectar): origen del H03.
+- Hito cerrado en S3 a petición de Miguel Ángel, abriendo el H03.

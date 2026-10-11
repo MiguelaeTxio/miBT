@@ -56,6 +56,7 @@ Estado de los hitos: ver `DOCS/ANNEX_ROUTER.md` (única fuente).
 |---|---|---|
 | 1 | Visor de diagnóstico y primeras notificaciones | `DOCS/ANNEX_H01.md` |
 | 2 | Módulo Xiaomi: izquierdo/derecho/estuche/carga y posición de cada auricular (Redmi Buds 6 Lite, protocolo `+XIAOMI` por HFP descifrado en el H01) | `DOCS/ANNEX_H02.md` |
+| 3 | Mejoras de la v1 funcional: persistencia de la batería por elemento entre reinicios del servicio y otras mejoras que se concierten | `DOCS/ANNEX_H03.md` |
 
 ## 4. Directrices Técnicas Vinculantes
 
