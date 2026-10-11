@@ -1,29 +1,33 @@
 # RESUMPTION_POINT — miBT
 
-**Hito EN PROGRESO:** Hito 01 — Visor de diagnóstico y primeras
-notificaciones (`DOCS/ANNEX_H01.md`).
+**Hito EN PROGRESO:** Hito 02 — Módulo Xiaomi: izquierdo/derecho/
+estuche/carga y posición (`DOCS/ANNEX_H02.md`).
 
 ## Próximos pasos concretos
 
-Ver "HOJA DE RUTA PARA LA SIGUIENTE SESIÓN" en el anexo del Hito 01,
-y los "DATOS REALES RECOGIDOS (S1)" que lo preceden.
+Ver "HOJA DE RUTA PARA LA SIGUIENTE SESIÓN" en `DOCS/ANNEX_H02.md`:
+parser `XiaomiProtocol.kt`, recepción de `+XIAOMI` en
+`BtMonitorService.kt`, notificación con los datos por elemento y la
+posición, build en verde y prueba en el móvil. El protocolo verificado
+está en la sección "Contexto técnico" del mismo anexo.
 
 ## Cómo arrancar la próxima sesión de miBT
 
-- Arranque normal con `newflow-android-pisa`: el repositorio ya tiene
-  commits, así que `git rev-parse HEAD` funciona y fija
-  `{SESSION_START_COMMIT}` (último commit de S1: ver `git log`).
-- Chat nuevo: enlazar `miBT` con `add_repo` (access push).
+- Arranque normal con `newflow-android-pisa`; chat nuevo: enlazar
+  `miBT` con `add_repo` (access push), sin PAT.
 - Secretos de GitHub Actions ya creados: `DEBUG_KEYSTORE_BASE64`,
   `PA_API_TOKEN`, `PA_USERNAME`, `RELEASES_REPO_TOKEN`. Repositorio de
   Releases `miBTReleases` creado.
+- El repositorio responde con aviso "This repository moved" hacia
+  `MiguelaeTxio/miBT.git` (el clon usa la URL en minúsculas); el push
+  funciona igual.
 
-## Nota de contexto
+## Estado al cierre de S2
 
-S1 se hizo dentro de un chat dedicado a otro proyecto
-(AperturasAjedrez), sin PISA ni PCS propios de miBT: no hay registro
-`com-pah` de miBT. La próxima sesión de miBT es la primera con
-protocolo completo. Estado al cierre de S1: APK v2 publicada en
-`miBTReleases`; recogido el log del auricular "TWS" (un único
-porcentaje por HFP/Apple, sin izquierdo/derecho/estuche); pendientes
-los logs de Xiaomi Buds 6 y del resto de dispositivos.
+- H01 COMPLETADO: los Redmi Buds 6 Lite envían batería de izquierdo,
+  derecho y estuche con bit de carga (`+XIAOMI` de 7 elementos, solo
+  al conectar) y la posición de cada auricular en tiempo real (trama
+  `0A{XX}`). Los dispositivos AliExpress solo dan el porcentaje único
+  Apple o nada.
+- Sin cambios de código en S2: la APK publicada sigue siendo la v2 de
+  diagnóstico.

@@ -55,6 +55,15 @@ Durante el uso solo se actualiza el porcentaje único
 (`+IPHONEACCEV`); la batería por elemento no se refresca hasta la
 siguiente conexión.
 
+## COMPLETADAS EN S2
+
+- Apertura del hito por PCH tras descifrar con cuatro logs reales el
+  protocolo `+XIAOMI` de los Redmi Buds 6 Lite (detalle en
+  `DOCS/ANNEX_H01.md`, "DATOS REALES RECOGIDOS (S2)").
+- Alcance concertado con Miguel Ángel: batería por elemento con hora
+  de lectura + posición de cada auricular en tiempo real; AliExpress
+  sin cambios. Sin código escrito todavía.
+
 ## HOJA DE RUTA PARA LA SIGUIENTE SESIÓN
 
 1. Crear `XiaomiProtocol.kt` (paquete `com.miguelaetxio.mibt`) con dos
