@@ -56,6 +56,14 @@ class BtMonitorService : Service() {
         // Company ids del Bluetooth SIG cuyos eventos HFP escuchamos:
         // Apple, Samsung, Huawei, Xiaomi, Google, Sony.
         private val COMPANY_IDS = intArrayOf(76, 117, 637, 911, 224, 301)
+
+        // Last +XIAOMI battery per device, so it survives service restarts.
+        // Key = address; value = "left,right,case,timeMillis" (raw protocol bytes).
+        // ---
+        // Última batería +XIAOMI por dispositivo, para que sobreviva a los
+        // reinicios del servicio. Clave = dirección; valor =
+        // "izquierdo,derecho,estuche,horaMillis" (bytes crudos del protocolo).
+        private const val PREFS_XIAOMI = "xiaomi_battery"
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -153,7 +161,9 @@ class BtMonitorService : Service() {
             }
             if (device != null && cmd == "+XIAOMI" && args is Array<*>) {
                 XiaomiProtocol.parseBattery(args)?.let {
-                    xiaomiBattery[device.address] = it to System.currentTimeMillis()
+                    val now = System.currentTimeMillis()
+                    xiaomiBattery[device.address] = it to now
+                    saveXiaomiBattery(device.address, it, now)
                 }
                 XiaomiProtocol.parsePosition(args)?.let {
                     xiaomiPosition[device.address] = it
@@ -166,6 +176,7 @@ class BtMonitorService : Service() {
     override fun onCreate() {
         super.onCreate()
         createChannel()
+        loadXiaomiBattery()
         val notification = buildSummary(0)
         ServiceCompat.startForeground(
             this, SUMMARY_ID, notification,
@@ -349,8 +360,14 @@ class BtMonitorService : Service() {
             lines.add("Izquierdo: ${cellText(b.left)}")
             lines.add("Derecho: ${cellText(b.right)}")
             lines.add("Estuche: ${cellText(b.case)}")
-            val hour = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
-            lines.add("Lectura de las $hour (al conectar)")
+            // A persisted reading may be from another day: then show the date too.
+            // ---
+            // Una lectura persistida puede ser de otro día: entonces se muestra la fecha.
+            val day = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+            val sameDay = day.format(Date(time)) == day.format(Date())
+            val pattern = if (sameDay) "HH:mm" else "dd/MM HH:mm"
+            val stamp = SimpleDateFormat(pattern, Locale.getDefault()).format(Date(time))
+            lines.add("Lectura de las $stamp (al conectar)")
         } else {
             lines.add("Izquierdo / derecho / estuche: sin datos")
         }
@@ -361,6 +378,30 @@ class BtMonitorService : Service() {
             )
         }
         return lines.joinToString("\n")
+    }
+
+    private fun saveXiaomiBattery(addr: String, b: XiaomiBattery, time: Long) {
+        val value = listOf(b.left, b.right, b.case)
+            .joinToString(",") { XiaomiProtocol.toRaw(it).toString() } + ",$time"
+        getSharedPreferences(PREFS_XIAOMI, Context.MODE_PRIVATE)
+            .edit().putString(addr, value).apply()
+    }
+
+    private fun loadXiaomiBattery() {
+        val prefs = getSharedPreferences(PREFS_XIAOMI, Context.MODE_PRIVATE)
+        for ((addr, raw) in prefs.all) {
+            val parts = (raw as? String)?.split(",") ?: continue
+            if (parts.size != 4) continue
+            val nums = parts.map { it.toLongOrNull() ?: return@map null }
+            if (nums.any { it == null }) continue
+            val battery = XiaomiBattery(
+                left = XiaomiProtocol.cell(nums[0]!!.toInt()),
+                right = XiaomiProtocol.cell(nums[1]!!.toInt()),
+                case = XiaomiProtocol.cell(nums[2]!!.toInt())
+            )
+            xiaomiBattery[addr] = battery to nums[3]!!
+        }
+        LogStore.log(this, TAG, "batería Xiaomi recuperada de ${xiaomiBattery.size} dispositivo(s)")
     }
 
     private fun cellText(cell: XiaomiCell?): String {

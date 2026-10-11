@@ -61,7 +61,15 @@ object XiaomiProtocol {
         )
     }
 
-    private fun cell(raw: Int): XiaomiCell? {
+    // Raw byte of a cell in the protocol's own encoding (255 = no data); used to
+    // persist the last reading and to rebuild it with cell().
+    // ---
+    // Byte crudo de una celda con la codificación del propio protocolo (255 = sin
+    // dato); se usa para persistir la última lectura y reconstruirla con cell().
+    fun toRaw(cell: XiaomiCell?): Int =
+        if (cell == null) 255 else cell.percent or (if (cell.charging) 0x80 else 0)
+
+    fun cell(raw: Int): XiaomiCell? {
         if (raw == 255) return null
         val percent = raw and 0x7F
         if (percent > 100) return null
