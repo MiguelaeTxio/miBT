@@ -51,3 +51,18 @@ de ruta solo cuando se concierta con Miguel Ángel.
    desconocida, solo el nombre.
 7. Commit + push, workflow en verde, Release publicada y prueba de
    Miguel Ángel de los puntos 4 a 6.
+8. **Estado en tiempo real por el protocolo propio de Xiaomi (decidido
+   en S3).** Verificado con el log de S3: los auriculares no envían la
+   trama de posición `+XIAOMI` por HFP en cada cambio (a las 09:5x se
+   sacó el derecho y no llegó ninguna trama; el receptor seguía vivo,
+   recibió `+IPHONEACCEV` a las 09:25:50), y la batería por elemento
+   solo llega al conectar. Android tampoco recibe más que la cifra
+   única (ajustes de Bluetooth: "Batería 80 %"). La app Xiaomi Earbuds
+   sí muestra el estado actual, luego los auriculares lo exponen por
+   un canal propio (anuncian, entre otros, los UUID
+   `df21fe2c-2515-4fdb-8886-f12c4d67927c` y
+   `8a482a08-5507-42ac-b673-a88df48b3fc7`). Pasos: (a) buscar
+   documentación o código abierto del protocolo (p. ej. Gadgetbridge);
+   (b) si no basta, capturar el tráfico app Xiaomi ↔ auriculares con el
+   registro HCI de Bluetooth del modo desarrollador y descifrarlo con
+   datos reales; (c) implementar la consulta/suscripción en miBT.
