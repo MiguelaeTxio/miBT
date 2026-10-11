@@ -66,6 +66,10 @@ jobs:
           token: ${{ secrets.RELEASES_REPO_TOKEN }}
           tag_name: v${{ github.run_number }}
           name: miBT v${{ github.run_number }}
+          body: |
+            Licencia: GNU AGPL-3.0-or-later.
+            Código fuente correspondiente a esta APK: https://github.com/${{ github.repository }}/tree/${{ github.sha }}
+            Incluye código derivado de Gadgetbridge (AGPL-3.0-or-later); atribución en README.md.
           files: |
             miBT.apk
             manifest.json
