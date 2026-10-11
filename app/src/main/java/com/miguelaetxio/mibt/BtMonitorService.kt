@@ -64,6 +64,13 @@ class BtMonitorService : Service() {
 
     private val vendorBattery = HashMap<String, Int>()
 
+    // Devices whose vendorBattery value came from +IPHONEACCEV, which only
+    // reports steps of 10 % (0..9), so the figure is approximate.
+    // ---
+    // Dispositivos cuyo valor de vendorBattery viene de +IPHONEACCEV, que solo
+    // informa en tramos de 10 % (0..9), así que la cifra es aproximada.
+    private val approxBattery = HashSet<String>()
+
     // Last +XIAOMI battery list per device with its reception time (kept after
     // disconnecting) and last bud position (cleared when the device disconnects).
     // ---
@@ -98,6 +105,7 @@ class BtMonitorService : Service() {
                 LogStore.log(context, "BATT-BROADCAST", "${describe(device)} nivel=$level")
                 if (device != null && level in 0..100) {
                     vendorBattery[device.address] = level
+                    approxBattery.remove(device.address)
                 }
             } else {
                 LogStore.log(context, "EVENT", "$action ${describe(device)}")
@@ -137,6 +145,7 @@ class BtMonitorService : Service() {
                         val v = args[i + 1].toString().toIntOrNull()
                         if (v != null && v in 0..9) {
                             vendorBattery[device.address] = (v + 1) * 10
+                            approxBattery.add(device.address)
                         }
                     }
                     i += 2
@@ -294,7 +303,12 @@ class BtMonitorService : Service() {
             val id = addr.hashCode()
             current.add(id)
             val title = name
-            val line = if (pct != null) "Batería: $pct%" else "Batería: sin datos"
+            val line = when {
+                pct == null -> "Batería: sin datos"
+                vendor != null && addr in approxBattery ->
+                    "Batería: ≈$pct% (HFP, en tramos de 10 %)"
+                else -> "Batería: $pct%"
+            }
             val detail = line + "\n" + xiaomiDetail(addr)
             val n = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
@@ -412,6 +426,7 @@ class BtMonitorService : Service() {
                 LogStore.log(this@BtMonitorService, "GATT", "$name batería estándar=$v status=$status")
                 if (v != null && v in 0..100) {
                     vendorBattery[device.address] = v
+                    approxBattery.remove(device.address)
                     handler.post { refresh() }
                 }
             }
