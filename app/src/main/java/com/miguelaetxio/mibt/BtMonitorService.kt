@@ -64,6 +64,10 @@ class BtMonitorService : Service() {
         // reinicios del servicio. Clave = dirección; valor =
         // "izquierdo,derecho,estuche,horaMillis" (bytes crudos del protocolo).
         private const val PREFS_XIAOMI = "xiaomi_battery"
+
+        private const val SRC_HFP = "HFP, en vivo, en tramos de 10 %"
+        private const val SRC_GATT = "GATT estándar"
+        private const val SRC_SYSTEM = "sistema"
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -72,12 +76,12 @@ class BtMonitorService : Service() {
 
     private val vendorBattery = HashMap<String, Int>()
 
-    // Devices whose vendorBattery value came from +IPHONEACCEV, which only
-    // reports steps of 10 % (0..9), so the figure is approximate.
+    // Source of each vendorBattery value, shown next to the figure. +IPHONEACCEV
+    // only reports steps of 10 % (0..9), so that figure is approximate.
     // ---
-    // Dispositivos cuyo valor de vendorBattery viene de +IPHONEACCEV, que solo
-    // informa en tramos de 10 % (0..9), así que la cifra es aproximada.
-    private val approxBattery = HashSet<String>()
+    // Origen de cada valor de vendorBattery, que se muestra junto a la cifra.
+    // +IPHONEACCEV solo informa en tramos de 10 % (0..9): esa cifra es aproximada.
+    private val batterySource = HashMap<String, String>()
 
     // Last +XIAOMI battery list per device with its reception time (kept after
     // disconnecting) and last bud position (cleared when the device disconnects).
@@ -113,7 +117,7 @@ class BtMonitorService : Service() {
                 LogStore.log(context, "BATT-BROADCAST", "${describe(device)} nivel=$level")
                 if (device != null && level in 0..100) {
                     vendorBattery[device.address] = level
-                    approxBattery.remove(device.address)
+                    batterySource[device.address] = SRC_SYSTEM
                 }
             } else {
                 LogStore.log(context, "EVENT", "$action ${describe(device)}")
@@ -153,7 +157,7 @@ class BtMonitorService : Service() {
                         val v = args[i + 1].toString().toIntOrNull()
                         if (v != null && v in 0..9) {
                             vendorBattery[device.address] = (v + 1) * 10
-                            approxBattery.add(device.address)
+                            batterySource[device.address] = SRC_HFP
                         }
                     }
                     i += 2
@@ -313,18 +317,20 @@ class BtMonitorService : Service() {
 
             val id = addr.hashCode()
             current.add(id)
-            val title = name
+            val position = xiaomiPosition[addr]?.let { positionTitle(it) }
+            val title = if (position != null) "$name — $position" else name
+            val source = if (vendor != null) batterySource[addr] ?: SRC_SYSTEM else SRC_SYSTEM
             val line = when {
                 pct == null -> "Batería: sin datos"
-                vendor != null && addr in approxBattery ->
-                    "Batería: ≈$pct% (HFP, en tramos de 10 %)"
-                else -> "Batería: $pct%"
+                source == SRC_HFP -> "Batería ($source): ≈$pct%"
+                else -> "Batería ($source): $pct%"
             }
             val detail = line + "\n" + xiaomiDetail(addr)
+            val collapsed = xiaomiBattery[addr]?.first?.let { compactBattery(it) } ?: line
             val n = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
                 .setContentTitle(title)
-                .setContentText(line)
+                .setContentText(collapsed)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
@@ -404,6 +410,30 @@ class BtMonitorService : Service() {
         LogStore.log(this, TAG, "batería Xiaomi recuperada de ${xiaomiBattery.size} dispositivo(s)")
     }
 
+    // Collapsed text: "I 63% ⚡ · D 100% ⚡ · E 100%", "–" for no data.
+    // ---
+    // Texto plegado: "I 63% ⚡ · D 100% ⚡ · E 100%", "–" si no hay dato.
+    private fun compactBattery(b: XiaomiBattery): String {
+        fun c(cell: XiaomiCell?) =
+            if (cell == null) "–" else "${cell.percent}%" + if (cell.charging) " ⚡" else ""
+        return "I ${c(b.left)} · D ${c(b.right)} · E ${c(b.case)}"
+    }
+
+    // Title suffix from the bud position; null when it is not known.
+    // ---
+    // Sufijo del título según la posición; null si no se conoce.
+    private fun positionTitle(p: XiaomiPosition): String? {
+        if (p.left == BudPlace.UNKNOWN || p.right == BudPlace.UNKNOWN) return null
+        val leftOut = p.left == BudPlace.OUT
+        val rightOut = p.right == BudPlace.OUT
+        return when {
+            leftOut && rightOut -> "ambos puestos"
+            leftOut -> "izquierdo puesto"
+            rightOut -> "derecho puesto"
+            else -> "en el estuche"
+        }
+    }
+
     private fun cellText(cell: XiaomiCell?): String {
         if (cell == null) return "sin dato"
         return "${cell.percent}%" + if (cell.charging) " ⚡ cargando" else ""
@@ -467,7 +497,7 @@ class BtMonitorService : Service() {
                 LogStore.log(this@BtMonitorService, "GATT", "$name batería estándar=$v status=$status")
                 if (v != null && v in 0..100) {
                     vendorBattery[device.address] = v
-                    approxBattery.remove(device.address)
+                    batterySource[device.address] = SRC_GATT
                     handler.post { refresh() }
                 }
             }
