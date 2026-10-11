@@ -48,6 +48,13 @@ varios dispositivos de AliExpress. Móviles: Redmi Note 10 y Redmi Note
   actualizador in-app (`update/UpdateChecker.kt`, botón *Buscar
   actualizaciones*) con el mismo patrón que AperturasAjedrez.
 
+- **Licencia (decidida S3):** AGPL-3.0-or-later (`LICENSE`,
+  `README.md`), porque la autenticación del canal de control Xiaomi
+  deriva de Gadgetbridge (AGPL-3.0-or-later, atribuido en `README.md`
+  y en la cabecera de cada archivo derivado). El repositorio es
+  público, así que el código fuente de cada APK publicada está
+  disponible. Todo código derivado de terceros lleva su atribución.
+
 ## 3. Hoja de Ruta Estratégica (hitos)
 
 Estado de los hitos: ver `DOCS/ANNEX_ROUTER.md` (única fuente).
