@@ -34,3 +34,20 @@ de ruta solo cuando se concierta con Miguel Ángel.
 3. Prueba de Miguel Ángel: con los auriculares conectados y la lectura
    visible, actualizar la app (o forzar la detención) y comprobar que
    la notificación conserva izquierdo/derecho/estuche y la hora.
+4. **Cifra genérica de batería con su origen (concertado en S3).** La
+   línea "Batería: X%" no dice de qué elemento ni de qué fuente viene
+   (en la prueba de S3 marcaba 100 % con el izquierdo al 63 %). Se
+   etiqueta con su origen: HFP (`+IPHONEACCEV`, en tramos de 10 %, la
+   única que se refresca durante el uso), GATT estándar o sistema
+   (broadcast / `getBatteryLevel()` oculto). No se oculta con datos por
+   elemento porque es la única cifra en vivo.
+5. **Vista contraída con resumen por elemento (concertado en S3).** Con
+   datos Xiaomi, el texto de la notificación plegada pasa a
+   "I 63% ⚡ · D 100% ⚡ · E 100%" ("–" si no hay dato); sin ellos,
+   queda la línea de batería actual.
+6. **Posición en el título (concertado en S3).** Con posición conocida,
+   el título es "{nombre} — {estado}": "ambos puestos", "izquierdo
+   puesto", "derecho puesto" o "en el estuche"; si la posición es
+   desconocida, solo el nombre.
+7. Commit + push, workflow en verde, Release publicada y prueba de
+   Miguel Ángel de los puntos 4 a 6.
