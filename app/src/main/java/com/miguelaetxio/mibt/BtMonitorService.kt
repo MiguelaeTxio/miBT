@@ -154,6 +154,15 @@ class BtMonitorService : Service() {
                 }
             } else {
                 LogStore.log(context, "EVENT", "$action ${describe(device)}")
+                // The live figure belongs to the current connection: the log of
+                // 2026-10-12 showed the previous session's 10 % as live on reconnect.
+                // ---
+                // La cifra en vivo pertenece a la conexión actual: el log del
+                // 2026-10-12 mostró como en vivo el 10 % de la sesión anterior.
+                if (action == BluetoothDevice.ACTION_ACL_DISCONNECTED && device != null) {
+                    vendorBattery.remove(device.address)
+                    batterySource.remove(device.address)
+                }
             }
             handler.postDelayed({ refresh() }, 800)
         }
