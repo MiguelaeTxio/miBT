@@ -96,15 +96,12 @@ de ruta solo cuando se concierta con Miguel Ángel.
   offline contra la respuesta real de los Buds 6 Lite antes de publicar.
 - Prueba de Miguel Ángel (10:51): "funciona perfectamente en principio"
   — la notificación refleja batería y posición en tiempo real.
-
-## TWS DE ALIEXPRESS (S3, 2026-10-12)
-
-- Miguel Ángel usa dos TWS de parejas distintas (un izquierdo de una y
-  un derecho de la otra), ambos anunciados como "TWS"
-  (`41:42:DE:1A:5B:D6` y `41:42:AD:C8:FB:B3`). Solo envían
-  `+IPHONEACCEV` (tramos de 10 %).
-- La cifra en vivo se borra al desconectar (commit `4148f99`): al
-  reconectar se mostraba el 10 % de la sesión anterior.
-- El título de la notificación usa el alias de Bluetooth de Android
-  (nombre que el usuario pone en Ajustes → Bluetooth), para distinguir
-  los dos "TWS".
+- **Corrección (log del 2026-10-12 09:07–09:08):** los dos TWS sueltos
+  forman una sola pareja ante el móvil: al cambiar de auricular no
+  apareció ningún dispositivo nuevo, todo llegó por `41:42:DE:1A:5B:D6`
+  (suenan en estéreo cuando están los dos). La cifra `+IPHONEACCEV`
+  pasó de 60 % a 100 % al entrar el otro auricular: es la del
+  auricular que hace de principal, sin indicar cuál. Solo anuncian HFP,
+  A2DP y AVRCP: no hay canal propio ni GATT del que sacar batería por
+  auricular ni cuál está puesto. El alias en el título se retiró (no
+  resolvía nada y no se pidió).

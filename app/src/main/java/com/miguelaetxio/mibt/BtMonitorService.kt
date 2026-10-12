@@ -310,13 +310,6 @@ class BtMonitorService : Service() {
         return "${name ?: "?"} (${device.address})"
     }
 
-    private fun displayName(d: BluetoothDevice, name: String): String {
-        val alias = if (Build.VERSION.SDK_INT >= 30) {
-            try { d.alias } catch (_: Exception) { null }
-        } else null
-        return if (alias.isNullOrBlank()) name else alias
-    }
-
     private fun connectedDevices(): List<BluetoothDevice> {
         val seen = LinkedHashMap<String, BluetoothDevice>()
         for (proxy in proxies.values) {
@@ -349,13 +342,6 @@ class BtMonitorService : Service() {
         for (d in devices) {
             val addr = d.address
             val name = try { d.name } catch (_: Exception) { null } ?: addr
-            // Title uses the name the user set in Android's Bluetooth settings
-            // (alias), so identical devices (two "TWS") can be told apart.
-            // ---
-            // El título usa el nombre que el usuario pone en los ajustes de
-            // Bluetooth de Android (alias), para distinguir dispositivos iguales
-            // (dos "TWS").
-            val shown = displayName(d, name)
             val hidden = hiddenBattery(d)
             val hiddenPct = hidden.toIntOrNull()
             val vendor = vendorBattery[addr]
@@ -379,7 +365,7 @@ class BtMonitorService : Service() {
             val id = addr.hashCode()
             current.add(id)
             val position = xiaomiPosition[addr]?.let { positionTitle(it) }
-            val title = if (position != null) "$shown — $position" else shown
+            val title = if (position != null) "$name — $position" else name
             val source = if (vendor != null) batterySource[addr] ?: SRC_SYSTEM else SRC_SYSTEM
             val line = when {
                 pct == null -> "Batería: sin datos"
