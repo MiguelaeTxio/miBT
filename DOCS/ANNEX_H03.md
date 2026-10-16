@@ -120,3 +120,8 @@ de ruta solo cuando se concierta con Miguel Ángel.
 - Flujo desde ahora: el modelo pide "pulsa Subir logs a Drive y dime
   listo", lee primero el manifiesto y descarta la subida si su hora es
   anterior a la petición.
+- **Verificado (2026-10-16):** cliente OAuth Android creado por Miguel
+  Ángel en `mimoo-drive`; primera subida real a las 14:17:53 (+0200),
+  versión 0.1 (29). El conector de Drive del chat encuentra la carpeta
+  "miBT - Intercambio Claude", `mibt-log.txt` y el manifiesto: misma
+  cuenta de Google, mecanismo dado por bueno.
