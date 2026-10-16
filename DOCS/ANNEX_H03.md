@@ -125,3 +125,16 @@ de ruta solo cuando se concierta con Miguel Ángel.
   versión 0.1 (29). El conector de Drive del chat encuentra la carpeta
   "miBT - Intercambio Claude", `mibt-log.txt` y el manifiesto: misma
   cuenta de Google, mecanismo dado por bueno.
+
+## TWS: VÍA BLE POR INVESTIGAR (S3, 2026-10-16)
+
+- Los TWS se presentan por HFP como accesorio Apple (`+XAPL
+  000D-0001-0101`, `+IPHONEACCEV`). Los auriculares tipo AirPods emiten
+  además anuncios BLE "proximity pairing" de Apple (fabricante
+  `0x004C`, tipo `0x07`) con batería de izquierdo/derecho/estuche, carga
+  y si están puestos. No se sabe si estos TWS lo hacen.
+- `BleAdvertProbe.kt` (diagnóstico): 60 s de escaneo BLE tras conectar
+  un dispositivo no Xiaomi; registra (`BLE-ADV`) cada anuncio Apple tipo
+  `0x07` y cualquiera llamado "TWS". Nuevo permiso `BLUETOOTH_SCAN`
+  (`neverForLocation`). Si aparecen anuncios, se descifran con datos
+  reales; si no, la vía queda descartada.

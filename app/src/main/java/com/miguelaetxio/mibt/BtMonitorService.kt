@@ -95,6 +95,12 @@ class BtMonitorService : Service() {
     private val lastSnapshot = HashMap<String, String>()
     private val gattProbed = HashSet<String>()
 
+    // One diagnostic BLE scan per connection of a non-Xiaomi device (TWS, H03).
+    // ---
+    // Un escaneo BLE de diagnóstico por conexión de un dispositivo no Xiaomi (TWS, H03).
+    private val bleProbe by lazy { BleAdvertProbe(this) }
+    private val bleScanned = HashSet<String>()
+
     // Open Xiaomi control channels per device address (H03 step 8).
     // ---
     // Canales de control Xiaomi abiertos por dirección (H03 paso 8).
@@ -276,6 +282,7 @@ class BtMonitorService : Service() {
             adapter?.closeProfileProxy(profile, proxy)
         }
         proxies.clear()
+        bleProbe.stop(adapter)
         for (channel in controlChannels.values) channel.stop()
         controlChannels.clear()
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -358,6 +365,7 @@ class BtMonitorService : Service() {
                 )
             }
             if (gattProbed.add(addr)) probeGatt(d)
+            if (!name.startsWith("Redmi Buds") && bleScanned.add(addr)) bleProbe.start(adapter)
             if (name.startsWith("Redmi Buds") && addr !in controlChannels) {
                 controlChannels[addr] = XiaomiControlChannel(this, d, channelListener).also { it.start() }
             }
@@ -391,6 +399,7 @@ class BtMonitorService : Service() {
         notifiedIds.addAll(current)
         val connected = devices.map { it.address }.toSet()
         gattProbed.retainAll(connected)
+        bleScanned.retainAll(connected)
         for (addr in controlChannels.keys - connected) {
             controlChannels.remove(addr)?.stop()
         }

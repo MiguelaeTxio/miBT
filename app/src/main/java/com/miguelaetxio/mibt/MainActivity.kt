@@ -130,7 +130,10 @@ class MainActivity : Activity() {
 
     private fun missingPermissions(): List<String> {
         val needed = ArrayList<String>()
-        if (Build.VERSION.SDK_INT >= 31) needed.add(Manifest.permission.BLUETOOTH_CONNECT)
+        if (Build.VERSION.SDK_INT >= 31) {
+            needed.add(Manifest.permission.BLUETOOTH_CONNECT)
+            needed.add(Manifest.permission.BLUETOOTH_SCAN)
+        }
         if (Build.VERSION.SDK_INT >= 33) needed.add(Manifest.permission.POST_NOTIFICATIONS)
         return needed.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
