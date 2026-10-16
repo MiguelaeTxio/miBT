@@ -28,6 +28,13 @@ jobs:
           mkdir -p ~/.android
           echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 -d > ~/.android/debug.keystore
 
+      # Certificate fingerprint for the Android OAuth client (Drive). Public data.
+      - name: Mostrar SHA-1 de firma (cliente OAuth Android de Google Cloud)
+        run: |
+          SHA1=$(keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey | grep "SHA1:" | awk '{print $2}')
+          echo "SHA-1 de la keystore de firma: $SHA1"
+          echo "SIGNING_SHA1=$SHA1" >> "$GITHUB_ENV"
+
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace -PversionCode=${{ github.run_number }}
 
@@ -70,6 +77,7 @@ jobs:
             Licencia: GNU AGPL-3.0-or-later.
             Código fuente correspondiente a esta APK: https://github.com/${{ github.repository }}/tree/${{ github.sha }}
             Incluye código derivado de Gadgetbridge (AGPL-3.0-or-later); atribución en README.md.
+            SHA-1 del certificado de firma: ${{ env.SIGNING_SHA1 }}
           files: |
             miBT.apk
             manifest.json

@@ -58,4 +58,8 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
+    // Drive authorization (drive.file) for "Subir logs a Drive", as in MiMoo.
+    // ---
+    // Autorización de Drive (drive.file) para "Subir logs a Drive", como en MiMoo.
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 }

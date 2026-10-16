@@ -105,3 +105,18 @@ de ruta solo cuando se concierta con Miguel Ángel.
   A2DP y AVRCP: no hay canal propio ni GATT del que sacar batería por
   auricular ni cuál está puesto. El alias en el título se retiró (no
   resolvía nada y no se pidió).
+
+## SUBIDA DE LOGS A DRIVE (S3, 2026-10-16, pedida por Miguel Ángel)
+
+- Botón "Subir logs a Drive" en la pantalla principal, emulando el de
+  MiMoo (`com-actions-relay` §7): `drive/DriveLogUploader.kt` sube
+  `mibt-log.txt` y el manifiesto `mibt_logs_manifest.txt` (el último) a
+  "miBT - Intercambio Claude", sobrescribiendo en su sitio. Sin Retrofit:
+  `HttpURLConnection` + `org.json` (PATCH vía `X-HTTP-Method-Override`).
+- Requisito manual de Miguel Ángel (Google Cloud, proyecto
+  `mimoo-drive`): crear un cliente OAuth tipo Android con paquete
+  `com.miguelaetxio.mibt` y el SHA-1 que figura en las notas de cada
+  Release de `miBTReleases`. Sin él, la autorización falla.
+- Flujo desde ahora: el modelo pide "pulsa Subir logs a Drive y dime
+  listo", lee primero el manifiesto y descarta la subida si su hora es
+  anterior a la petición.

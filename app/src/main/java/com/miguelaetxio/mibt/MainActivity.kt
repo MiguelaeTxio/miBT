@@ -12,6 +12,10 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.Scope
+import com.miguelaetxio.mibt.drive.DriveLogUploader
 import com.miguelaetxio.mibt.update.UpdateCheckResult
 import com.miguelaetxio.mibt.update.UpdateChecker
 
@@ -23,6 +27,12 @@ class MainActivity : Activity() {
     private lateinit var installButton: Button
     private lateinit var updateChecker: UpdateChecker
     private var pendingApkUri: android.net.Uri? = null
+    private lateinit var driveStatus: TextView
+
+    companion object {
+        private const val REQ_DRIVE_AUTH = 2
+        private const val DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,6 +67,9 @@ class MainActivity : Activity() {
         })
         root.addView(button("Actualizar log") { showLog() })
         root.addView(button("Compartir log") { shareLog() })
+        root.addView(button("Subir logs a Drive") { onUploadLogsClicked() })
+        driveStatus = TextView(this).apply { textSize = 14f }
+        root.addView(driveStatus)
         root.addView(button("Borrar log") {
             LogStore.clear(this)
             showLog()
@@ -148,6 +161,78 @@ class MainActivity : Activity() {
         status.text = "miBT ${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})\n" +
             if (missing.isEmpty()) "Permisos concedidos" else "Faltan permisos: ${missing.size}"
         logView.text = LogStore.tail(this, 80)
+    }
+
+    // Same flow as MiMoo: AuthorizationClient with the drive.file scope (the app
+    // only sees what it creates); consent dialog only the first time.
+    // ---
+    // Mismo flujo que MiMoo: AuthorizationClient con el scope drive.file (la app
+    // solo ve lo que crea); el diálogo de consentimiento solo la primera vez.
+    private fun onUploadLogsClicked() {
+        driveStatus.text = "Autorizando Drive..."
+        val request = AuthorizationRequest.builder()
+            .setRequestedScopes(listOf(Scope(DRIVE_FILE_SCOPE)))
+            .build()
+        Identity.getAuthorizationClient(this).authorize(request)
+            .addOnSuccessListener { result ->
+                val pending = result.pendingIntent
+                if (result.hasResolution() && pending != null) {
+                    try {
+                        startIntentSenderForResult(pending.intentSender, REQ_DRIVE_AUTH, null, 0, 0, 0)
+                    } catch (e: Exception) {
+                        driveError("no se pudo abrir el consentimiento", e)
+                    }
+                } else {
+                    val token = result.accessToken
+                    if (token != null) uploadLogs(token) else driveStatus.text = "Error: Drive no devolvió token"
+                }
+            }
+            .addOnFailureListener { e -> driveError("autorización rechazada", e) }
+    }
+
+    @Deprecated("Deprecated in Android 11")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQ_DRIVE_AUTH) return
+        // Read the result from the Intent without checking resultCode first
+        // (MiMoo S006: checking it discarded valid authorizations).
+        // ---
+        // Se lee el resultado del Intent sin mirar antes resultCode (MiMoo S006:
+        // comprobarlo descartaba autorizaciones válidas).
+        try {
+            val result = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data)
+            val token = result.accessToken
+            if (token != null) uploadLogs(token) else driveStatus.text = "Error: Drive no devolvió token"
+        } catch (e: Exception) {
+            driveError("consentimiento no concedido", e)
+        }
+    }
+
+    private fun uploadLogs(token: String) {
+        driveStatus.text = "Subiendo logs a Drive..."
+        Thread {
+            try {
+                DriveLogUploader(this).upload(token)
+                runOnUiThread {
+                    driveStatus.text = "Logs subidos a \"${DriveLogUploader.FOLDER_NAME}\""
+                    showLog()
+                }
+            } catch (e: Exception) {
+                runOnUiThread { driveError("subida fallida", e) }
+            }
+        }.start()
+    }
+
+    private fun driveError(what: String, e: Exception) {
+        val detail = if (e is com.google.android.gms.common.api.ApiException) {
+            "${e.statusCode} ${e.status.statusMessage ?: ""}"
+        } else {
+            "${e.javaClass.simpleName} ${e.message ?: ""}"
+        }
+        LogStore.log(this, "DRIVE", "$what: $detail")
+        driveStatus.text = "Error: $what ($detail)"
+        showLog()
     }
 
     private fun shareLog() {

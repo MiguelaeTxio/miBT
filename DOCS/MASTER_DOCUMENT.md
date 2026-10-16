@@ -40,7 +40,16 @@ varios dispositivos de AliExpress. Móviles: Redmi Note 10 y Redmi Note
   cada dispositivo anuncia** (eventos HFP, GATT, lectura oculta). Con
   ese log real se escribe después el módulo por fabricante para
   izquierda/derecha/estuche/carga.
-- Log en `files/mibt-log.txt`, con botón de compartir en la app.
+- Log en `files/mibt-log.txt`, con botón de compartir en la app y
+  botón **"Subir logs a Drive"** (S3, mismo patrón que MiMoo,
+  `com-actions-relay` §7): sube a la carpeta **"miBT - Intercambio
+  Claude"** `mibt-log.txt` y, el último, `mibt_logs_manifest.txt`
+  (línea `Subida:`), sobrescribiendo en su sitio. Autorización con
+  `play-services-auth` (scope `drive.file`) contra un cliente OAuth
+  Android del proyecto de Google Cloud `mimoo-drive` (paquete
+  `com.miguelaetxio.mibt` + SHA-1 de la keystore de miBT, que cada
+  Release publica en sus notas). Única dependencia añadida a
+  `androidx.core`.
 - Compilación solo en GitHub Actions (`.github/workflows/
   build-and-deploy.yml`), mismo flujo que AperturasAjedrez: compila,
   sube el APK a PythonAnywhere, genera `manifest.json` y publica
