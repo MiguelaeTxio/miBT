@@ -3,6 +3,7 @@ package com.miguelaetxio.mibt
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
@@ -36,10 +37,25 @@ class BleAdvertProbe(private val context: Context) {
     private val seen = HashSet<String>()
     private var running = false
 
+    // Totals logged when the scan ends, so "nothing logged" can be told apart from
+    // "the scan received nothing" (2026-10-18 log: 19 scans, no line either way).
+    // ---
+    // Totales registrados al terminar, para distinguir "no se registró nada" de "el
+    // escaneo no recibió nada" (log del 2026-10-18: 19 escaneos, sin ninguna línea).
+    private var total = 0
+    private val appleTypes = HashMap<Int, Int>()
+    private val addresses = HashSet<String>()
+
     private val callback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val record = result.scanRecord ?: return
             val apple = record.getManufacturerSpecificData(APPLE_ID)
+            total++
+            addresses.add(result.device.address)
+            if (apple != null && apple.isNotEmpty()) {
+                val type = apple[0].toInt() and 0xFF
+                appleTypes[type] = (appleTypes[type] ?: 0) + 1
+            }
             val name = record.deviceName
             val isProximity = apple != null && apple.isNotEmpty() && apple[0].toInt() == 0x07
             val isTws = name != null && name.contains("TWS", ignoreCase = true)
@@ -73,14 +89,24 @@ class BleAdvertProbe(private val context: Context) {
             return
         }
         val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
+        // Filtered scan: Android pauses unfiltered scans while the screen is off.
+        // ---
+        // Escaneo con filtros: Android pausa los escaneos sin filtro con la pantalla apagada.
+        val filters = listOf(
+            ScanFilter.Builder().setManufacturerData(APPLE_ID, ByteArray(0)).build(),
+            ScanFilter.Builder().setDeviceName("TWS").build()
+        )
         try {
-            scanner.startScan(null, settings, callback)
+            scanner.startScan(filters, settings, callback)
         } catch (t: Throwable) {
             LogStore.log(context, TAG, "no se pudo escanear: ${t.javaClass.simpleName} ${t.message}")
             return
         }
         running = true
         seen.clear()
+        total = 0
+        appleTypes.clear()
+        addresses.clear()
         LogStore.log(context, TAG, "escaneo iniciado (${SCAN_MS / 1000} s)")
         handler.postDelayed({ stop(adapter) }, SCAN_MS)
     }
@@ -92,6 +118,11 @@ class BleAdvertProbe(private val context: Context) {
             adapter?.bluetoothLeScanner?.stopScan(callback)
         } catch (_: Throwable) {
         }
-        LogStore.log(context, TAG, "escaneo terminado")
+        val types = appleTypes.entries.sortedBy { it.key }
+            .joinToString(",") { "%02X:%d".format(it.key, it.value) }
+        LogStore.log(
+            context, TAG,
+            "escaneo terminado: $total anuncios de ${addresses.size} dispositivo(s), tipos Apple=[$types]"
+        )
     }
 }

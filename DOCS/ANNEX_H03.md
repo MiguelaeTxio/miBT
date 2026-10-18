@@ -138,3 +138,14 @@ de ruta solo cuando se concierta con Miguel Ángel.
   `0x07` y cualquiera llamado "TWS". Nuevo permiso `BLUETOOTH_SCAN`
   (`neverForLocation`). Si aparecen anuncios, se descifran con datos
   reales; si no, la vía queda descartada.
+- **Primer resultado (log del 2026-10-16 15:07 al 2026-10-18 14:23):**
+  19 escaneos de 60 s (5 tras conectar los TWS: 2026-10-17 23:02,
+  2026-10-18 07:32, 11:46, 12:30 y 13:41), ninguna línea de anuncio
+  Apple tipo `0x07` ni con nombre "TWS". No concluyente: el escaneo no
+  registraba cuántos anuncios recibía en total, y Android pausa los
+  escaneos sin filtro con la pantalla apagada. Corregido: escaneo con
+  filtros (fabricante `0x004C` y nombre "TWS") y línea final con el
+  total de anuncios, dispositivos y tipos Apple vistos.
+- Otros dispositivos vistos: SRS-XB23 (Sony, `+XAPL 0X054C-0X0DD1`,
+  cifra única por `+IPHONEACCEV`) y CITROEN (equipo del coche, sin
+  batería: "sin datos" es correcto).
