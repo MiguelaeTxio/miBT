@@ -24,7 +24,10 @@ object LogStore {
             // Recorta el archivo cuando crece demasiado, conservando el final.
             if (f.exists() && f.length() > MAX_BYTES) {
                 val tail = f.readText().takeLast((MAX_BYTES / 2).toInt())
-                f.writeText(tail)
+                // Cut at a line boundary (the 2026-10-26 upload began mid-line).
+                // ---
+                // Corte en un límite de línea (la subida del 2026-10-26 empezaba a media línea).
+                f.writeText(tail.substring(tail.indexOf('\n') + 1))
             }
             f.appendText("${format.format(Date())} [$tag] $message\n")
         } catch (_: Exception) {

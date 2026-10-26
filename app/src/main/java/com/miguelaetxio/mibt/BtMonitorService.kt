@@ -95,12 +95,6 @@ class BtMonitorService : Service() {
     private val lastSnapshot = HashMap<String, String>()
     private val gattProbed = HashSet<String>()
 
-    // One diagnostic BLE scan per connection of a non-Xiaomi device (TWS, H03).
-    // ---
-    // Un escaneo BLE de diagnóstico por conexión de un dispositivo no Xiaomi (TWS, H03).
-    private val bleProbe by lazy { BleAdvertProbe(this) }
-    private val bleScanned = HashSet<String>()
-
     // Open Xiaomi control channels per device address (H03 step 8).
     // ---
     // Canales de control Xiaomi abiertos por dirección (H03 paso 8).
@@ -282,7 +276,6 @@ class BtMonitorService : Service() {
             adapter?.closeProfileProxy(profile, proxy)
         }
         proxies.clear()
-        bleProbe.stop(adapter)
         for (channel in controlChannels.values) channel.stop()
         controlChannels.clear()
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -365,7 +358,6 @@ class BtMonitorService : Service() {
                 )
             }
             if (gattProbed.add(addr)) probeGatt(d)
-            if (!name.startsWith("Redmi Buds") && bleScanned.add(addr)) bleProbe.start(adapter)
             if (name.startsWith("Redmi Buds") && addr !in controlChannels) {
                 controlChannels[addr] = XiaomiControlChannel(this, d, channelListener).also { it.start() }
             }
@@ -380,7 +372,7 @@ class BtMonitorService : Service() {
                 source == SRC_HFP -> "Batería ($source): ≈$pct%"
                 else -> "Batería ($source): $pct%"
             }
-            val detail = line + "\n" + xiaomiDetail(addr)
+            val detail = xiaomiDetail(addr)?.let { line + "\n" + it } ?: line
             val collapsed = xiaomiBattery[addr]?.first?.let { compactBattery(it) } ?: line
             val n = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
@@ -399,7 +391,14 @@ class BtMonitorService : Service() {
         notifiedIds.addAll(current)
         val connected = devices.map { it.address }.toSet()
         gattProbed.retainAll(connected)
-        bleScanned.retainAll(connected)
+        // Forget the last logged snapshot of disconnected devices, so every new
+        // connection logs a DEVICE line (2026-10-26 log: BT-CAR Kit connected 23
+        // times with no DEVICE line).
+        // ---
+        // Olvida la última instantánea registrada de los dispositivos desconectados,
+        // para que cada conexión nueva registre su línea DEVICE (log del 2026-10-26:
+        // BT-CAR Kit se conectó 23 veces sin ninguna línea DEVICE).
+        lastSnapshot.keys.retainAll(connected)
         for (addr in controlChannels.keys - connected) {
             controlChannels.remove(addr)?.stop()
         }
@@ -408,17 +407,18 @@ class BtMonitorService : Service() {
     }
 
     // Per-element battery, reading time and bud position when +XIAOMI data exist;
-    // otherwise the generic "no data" line. Nothing is invented (§4.6).
+    // null otherwise: devices without that data (TWS, speakers, car kits) only
+    // expose the single figure, so no left/right/case line is shown. Nothing is
+    // invented (§4.6).
     // ---
     // Batería por elemento, hora de lectura y posición de los auriculares si hay
-    // datos +XIAOMI; si no, la línea genérica "sin datos". Nada se inventa (§4.6).
-    private fun xiaomiDetail(addr: String): String {
+    // datos +XIAOMI; null si no: los dispositivos sin esos datos (TWS, altavoces,
+    // equipos de coche) solo dan la cifra única, así que no se muestra línea de
+    // izquierdo/derecho/estuche. Nada se inventa (§4.6).
+    private fun xiaomiDetail(addr: String): String? {
         val battery = xiaomiBattery[addr]
         val position = xiaomiPosition[addr]
-        if (battery == null && position == null) {
-            return "Izquierdo / derecho / estuche / carga: sin datos " +
-                "(pendiente del protocolo del fabricante)"
-        }
+        if (battery == null && position == null) return null
         val lines = ArrayList<String>()
         if (battery != null) {
             val (b, time) = battery

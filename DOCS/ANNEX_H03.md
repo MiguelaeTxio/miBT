@@ -149,3 +149,20 @@ de ruta solo cuando se concierta con Miguel Ángel.
 - Otros dispositivos vistos: SRS-XB23 (Sony, `+XAPL 0X054C-0X0DD1`,
   cifra única por `+IPHONEACCEV`) y CITROEN (equipo del coche, sin
   batería: "sin datos" es correcto).
+- **Resultado concluyente (log del 2026-10-22 13:33 al 2026-10-26 07:10):**
+  el escaneo con filtros funciona (hasta 930 anuncios Apple en 60 s;
+  0 cuando no hay nadie cerca). Tras 11 conexiones de los TWS, ningún
+  anuncio Apple tipo `0x07` atribuible a ellos: los 8 vistos en todo el
+  periodo son de otros dispositivos (RSSI entre -78 y -98, direcciones
+  distintas, la mayoría sin los TWS conectados). **Vía BLE descartada**
+  para los TWS; `BleAdvertProbe.kt` y el permiso `BLUETOOTH_SCAN`
+  retirados (el escaneo de 60 s se lanzaba en cada conexión, también
+  del coche).
+- Otros dispositivos nuevos: M80A (`+XAPL ABCD-1234-0100`, cifra única)
+  y BT-CAR Kit (sin batería).
+- Mejoras aplicadas con ese log: sin línea "Izquierdo / derecho /
+  estuche: sin datos (pendiente del protocolo del fabricante)" en los
+  dispositivos que no son Xiaomi (ya no es un protocolo pendiente: no
+  existe); `lastSnapshot` se olvida al desconectar, para que cada
+  conexión registre su línea DEVICE (BT-CAR Kit: 23 conexiones sin
+  ninguna); el recorte del log corta en límite de línea.
