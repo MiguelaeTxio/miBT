@@ -166,3 +166,15 @@ de ruta solo cuando se concierta con Miguel Ángel.
   existe); `lastSnapshot` se olvida al desconectar, para que cada
   conexión registre su línea DEVICE (BT-CAR Kit: 23 conexiones sin
   ninguna); el recorte del log corta en límite de línea.
+
+## BATERÍA A PRIMERA VISTA (S3, 2026-10-27, pedido de Miguel Ángel)
+
+- Problema: al abrir las notificaciones se veía "Batería (HFP, en vivo,
+  en tramos de 10 %)…" truncado; hacían falta dos toques para leer el
+  porcentaje de cada dispositivo.
+- Ahora: el título de cada notificación es "{nombre}  {batería}"
+  ("TWS  50%"; en Xiaomi "I 63% · D 100% · E 100%"), y el resumen del
+  grupo lista todos ("TWS  50% · M80A  100%"), así que el grupo plegado
+  ya muestra la batería. El texto plegado es corto (posición en Xiaomi;
+  "Aproximada, en tramos de 10 %" en HFP) y el origen y los detalles
+  quedan en la vista desplegada.

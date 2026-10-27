@@ -223,7 +223,7 @@ class BtMonitorService : Service() {
         super.onCreate()
         createChannel()
         loadXiaomiBattery()
-        val notification = buildSummary(0)
+        val notification = buildSummary(emptyList())
         ServiceCompat.startForeground(
             this, SUMMARY_ID, notification,
             ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
@@ -338,6 +338,7 @@ class BtMonitorService : Service() {
         val devices = connectedDevices()
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val current = HashSet<Int>()
+        val headlines = ArrayList<String>()
 
         for (d in devices) {
             val addr = d.address
@@ -364,16 +365,29 @@ class BtMonitorService : Service() {
 
             val id = addr.hashCode()
             current.add(id)
+            // The battery goes first, in the title, so it is read without expanding
+            // anything (Miguel Ángel, 2026-10-27). Source and details go below.
+            // ---
+            // La batería va lo primero, en el título, para leerla sin desplegar nada
+            // (Miguel Ángel, 2026-10-27). El origen y los detalles van debajo.
             val position = xiaomiPosition[addr]?.let { positionTitle(it) }
-            val title = if (position != null) "$name — $position" else name
             val source = if (vendor != null) batterySource[addr] ?: SRC_SYSTEM else SRC_SYSTEM
+            val elements = xiaomiBattery[addr]?.first?.let { compactBattery(it) }
+            val headline = elements ?: if (pct != null) "$pct%" else "sin datos"
+            val title = "$name  $headline"
+            headlines.add("$name  $headline")
             val line = when {
                 pct == null -> "Batería: sin datos"
-                source == SRC_HFP -> "Batería ($source): ≈$pct%"
-                else -> "Batería ($source): $pct%"
+                source == SRC_HFP -> "Batería general: ≈$pct% ($source)"
+                else -> "Batería general: $pct% ($source)"
             }
             val detail = xiaomiDetail(addr)?.let { line + "\n" + it } ?: line
-            val collapsed = xiaomiBattery[addr]?.first?.let { compactBattery(it) } ?: line
+            val collapsed = position?.replaceFirstChar { it.uppercase() } ?: when {
+                pct == null -> "Sin datos de batería"
+                source == SRC_HFP -> "Aproximada, en tramos de 10 %"
+                source == SRC_GATT -> "Dato GATT estándar"
+                else -> "Dato del sistema"
+            }
             val n = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
                 .setContentTitle(title)
@@ -403,7 +417,7 @@ class BtMonitorService : Service() {
             controlChannels.remove(addr)?.stop()
         }
         xiaomiPosition.keys.retainAll(connected)
-        nm.notify(SUMMARY_ID, buildSummary(devices.size))
+        nm.notify(SUMMARY_ID, buildSummary(headlines))
     }
 
     // Per-element battery, reading time and bud position when +XIAOMI data exist;
@@ -504,12 +518,19 @@ class BtMonitorService : Service() {
         BudPlace.UNKNOWN -> "en posición desconocida"
     }
 
-    private fun buildSummary(count: Int): Notification {
-        val text = if (count == 0) "Sin dispositivos conectados" else "$count conectado(s)"
+    // The group summary lists every device with its battery ("TWS  50% · M80A
+    // 100%"), so the collapsed group already shows it.
+    // ---
+    // El resumen del grupo lista cada dispositivo con su batería ("TWS  50% · M80A
+    // 100%"), para que el grupo plegado ya la muestre.
+    private fun buildSummary(headlines: List<String>): Notification {
+        val text = if (headlines.isEmpty()) "Sin dispositivos conectados" else headlines.joinToString(" · ")
+        val inbox = NotificationCompat.InboxStyle()
+        headlines.forEach { inbox.addLine(it) }
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
-            .setContentTitle("miBT")
-            .setContentText(text)
+            .setContentTitle(text)
+            .setStyle(inbox)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setGroup("mibt")
